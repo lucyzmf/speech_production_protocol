@@ -1,6 +1,6 @@
 from pathlib import Path
 
-root_path = Path('/Users/lucyzhang/Desktop/PhD stuff/research/speech_production_protocol')
+root_path = Path('/Users/lucy/Documents/PhD stuff/research/speech_production_protocol')
 
 # paths 
 sentence_file = root_path / "text" / "selected_with_translation_audiopath.csv"
@@ -15,6 +15,11 @@ total_num_sentece = 100
 n_blocks = 4 
 shuffle_sentences = True
 shuffle_words = True
+
+fixation_size = 0.1
+text_size = 0.1
+text_color = (1, 1, 1)
+screen_color = (-0.6875, -0.6875, -0.66406)
 
 n_trial_runs = 4
 
