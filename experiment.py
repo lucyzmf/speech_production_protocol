@@ -1,4 +1,4 @@
-from psychopy import visual, core, event, gui, prefs, sound
+from psychopy import event, visual, core, gui, prefs, sound
 prefs.hardware['audioLib'] = ['PTB']
 
 import pandas as pd 
@@ -14,18 +14,25 @@ from config import *
 
 
 # load messages
-with open(root_path / "exp_text" /'instruction_message.yaml', 'r') as file:
+with open((root_path / "exp_text" /'instruction_message.yaml'), 'r') as file:
     instruction_messages = yaml.safe_load(file)
     
 assert type(instruction_messages) == dict
+
+# global variables
+# Create a window
+WIN = visual.Window(fullscr=full_screen, color=screen_color, units="norm")
+CLOCK = core.Clock()
+FIXATION = visual.TextStim(WIN, text='+', color=(-1, -1, -1), font='Arial', height=fixation_size)
+
 
 
 # helper functions 
 # Define other components you'll need, like a clock for timing
 def display_message(text: str):
-    message = visual.TextStim(win, text=text, color=(-1, -1, -1), wrapWidth=1.5, font='Arial')
+    message = visual.TextStim(WIN, text=text, color=text_color, wrapWidth=1, font='Arial', height=text_size)
     message.draw()
-    win.flip()
+    WIN.flip()
     event.waitKeys(keyList=['return'])
 
 def play_trigger(n_triggers: int, wait_time, core):
@@ -48,19 +55,18 @@ def mode_end_beep(sec=mode_end_beep_secs):
 
 def speech_modes(is_perception: bool, audio_path=None):
     # draw green fixation cross
-    fixation = visual.TextStim(win, text='+', color=(-1, -1, -1), font='Arial')
-    fixation.draw()
-    win.flip()
+    FIXATION.draw()
+    WIN.flip()
     
     mode_start_beep()
     # draw green fixation 
-    fixation.color = (0, 1, 0)
-    fixation.draw()
-    win.flip()
+    FIXATION.color = (0, 1, 0)
+    FIXATION.draw()
+    WIN.flip()
     
     if is_perception:
         # play audio 
-        audio = sound.Sound("audio/i-cant-think-of-anything-175801.mp3")
+        audio = sound.Sound(audio_path[3:])
         audio.play()
         core.wait(audio.getDuration() + audio_end_wait)
     else: 
@@ -74,25 +80,50 @@ def speech_modes(is_perception: bool, audio_path=None):
     mode_end_beep()
     
     # draw black fixation cross
-    fixation.color = (-1, -1, -1)
-    fixation.draw()
-    win.flip()
+    FIXATION.color = (-1, -1, -1)
+    FIXATION.draw()
+    WIN.flip()
     
     core.wait(mode_end_wait)
-    
-    
-    
-def trial_run(df_row):
+
+
+def test_trial_run(df_row):
     # perception 
+    # draw perception icon 
+    
     speech_modes(is_perception=True, audio_path=df_row['audio_path'])
     # intermode wait
     core.wait(inter_mode_wait)
     
     # internal speech 
+    # draw internal speech icon
     speech_modes(is_perception=False)
     core.wait(inter_mode_wait)
     
     # speech 
+    # draw speech icon
+    speech_modes(is_perception=False)
+    core.wait(inter_mode_wait)
+    
+    # trial end wait 
+    core.wait(trial_end_wait)
+    
+    
+def trial_run(df_row):
+    # perception 
+    # draw perception icon 
+    
+    speech_modes(is_perception=True, audio_path=df_row['audio_path'])
+    # intermode wait
+    core.wait(inter_mode_wait)
+    
+    # internal speech 
+    # draw internal speech icon
+    speech_modes(is_perception=False)
+    core.wait(inter_mode_wait)
+    
+    # speech 
+    # draw speech icon
     speech_modes(is_perception=False)
     core.wait(inter_mode_wait)
     
@@ -139,12 +170,13 @@ def record_audio():
 #######################################
 # welcome
 #######################################
-
 # Create a dialog box to enter the date of the experiment
 dateDlg = gui.Dlg(title="Experiment Date")
-dateDlg.addField('Enter the date (YYYY-MM-DD):')
-dateDlg.addField('Enter the time:')
+dateDlg.addField('Date:', tip='Enter the date (YYYY-MM-DD)')
+dateDlg.addField('Time:', tip='Enter the time')
+
 dateInfo = dateDlg.show()  # show dialog and wait for OK or Cancel
+
 if dateDlg.OK:  # if OK was pressed, proceed
     # experiment_date = dateInfo[0]
     experiment_date = dateInfo[list(dateInfo.keys())[0]]
@@ -153,9 +185,6 @@ if dateDlg.OK:  # if OK was pressed, proceed
 else:
     core.quit()  # User pressed cancel, so exit
     
-# Create a window
-win = visual.Window(fullscr=full_screen, color=(245, 245, 245))
-clock = core.Clock()
 
 # Ensure the recording stops properly when the script ends
 
@@ -187,9 +216,9 @@ block_run(sentences.iloc[:10])
 #######################################
 # end
 #######################################
-finish_statement = visual.TextStim(win, text=instruction_messages['finish_page'], color=(-1, -1, -1), font='Arial')
+finish_statement = visual.TextStim(WIN, text=instruction_messages['finish_page'], color=text_color, font='Arial')
 finish_statement.draw()
-win.flip()
+WIN.flip()
 core.wait(2)  # Adjust the wait time as needed
 
 # Save the events to a CSV file
@@ -197,7 +226,7 @@ core.wait(2)  # Adjust the wait time as needed
 # events.to_csv(save_path / f'events-{experiment_date}-{exp_time}_all.csv', index=False)
 
 # Close the window and quit the experiment
-win.close()
+WIN.close()
 core.quit()
 
 
