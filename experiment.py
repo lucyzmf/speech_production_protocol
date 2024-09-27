@@ -25,13 +25,28 @@ WIN = visual.Window(fullscr=full_screen, color=screen_color, units="norm")
 CLOCK = core.Clock()
 FIXATION = visual.TextStim(WIN, text='+', color=(-1, -1, -1), font='Arial', height=fixation_size)
 
+# load icons 
+imagine_icon = visual.ImageStim(WIN, image=(root_path / "icon" / "imagine.png"), size=(0.2, 0.2), pos=(0, 0.3))
+speak_icon = visual.ImageStim(WIN, image=(root_path / "icon" / "speak.png"), size=(0.2, 0.2), pos=(0, 0.3))
+listen_icon = visual.ImageStim(WIN, image=(root_path / "icon" / "audio.png"), size=(0.2, 0.2), pos=(0, 0.3))
+
 
 
 # helper functions 
 # Define other components you'll need, like a clock for timing
-def display_message(text: str):
-    message = visual.TextStim(WIN, text=text, color=text_color, wrapWidth=1, font='Arial', height=text_size)
+def display_message(text: str, other_icons=None):
+    message = visual.TextStim(WIN, text=text, color=text_color, wrapWidth=1.5, font='Arial', height=text_size)
     message.draw()
+    
+    # "Press Enter to continue" prompt at the bottom-right corner
+    prompt_text = "Press 'Enter' to continue"
+    prompt = visual.TextStim(WIN, text=prompt_text, color=text_color, pos=(0.95, -0.98), height=text_size * 0.7, anchorHoriz='right')
+    prompt.draw()
+    
+    if other_icons:
+        for icon in other_icons:
+            icon.draw()
+    
     WIN.flip()
     event.waitKeys(keyList=['return'])
 
@@ -53,18 +68,25 @@ def mode_end_beep(sec=mode_end_beep_secs):
     core.wait(beep.getDuration() + mode_end_beep_wait)  # Wait for the sound duration and additional wait time
     
 
-def speech_modes(is_perception: bool, audio_path=None):
+def speech_modes(mode: str, audio_path=None):
     # draw green fixation cross
     FIXATION.draw()
     WIN.flip()
     
+    if mode == 'perception':
+        listen_icon.draw()
+    elif mode == 'imagine':
+        imagine_icon.draw()
+    elif mode == 'speak':
+        speak_icon.draw()
+        
     mode_start_beep()
     # draw green fixation 
     FIXATION.color = (0, 1, 0)
     FIXATION.draw()
     WIN.flip()
     
-    if is_perception:
+    if mode == 'perception':
         # play audio 
         audio = sound.Sound(audio_path[3:])
         audio.play()
@@ -85,46 +107,24 @@ def speech_modes(is_perception: bool, audio_path=None):
     WIN.flip()
     
     core.wait(mode_end_wait)
-
-
-def test_trial_run(df_row):
-    # perception 
-    # draw perception icon 
-    
-    speech_modes(is_perception=True, audio_path=df_row['audio_path'])
-    # intermode wait
-    core.wait(inter_mode_wait)
-    
-    # internal speech 
-    # draw internal speech icon
-    speech_modes(is_perception=False)
-    core.wait(inter_mode_wait)
-    
-    # speech 
-    # draw speech icon
-    speech_modes(is_perception=False)
-    core.wait(inter_mode_wait)
-    
-    # trial end wait 
-    core.wait(trial_end_wait)
     
     
 def trial_run(df_row):
     # perception 
     # draw perception icon 
     
-    speech_modes(is_perception=True, audio_path=df_row['audio_path'])
+    speech_modes("perception", audio_path=df_row['audio_path'])
     # intermode wait
     core.wait(inter_mode_wait)
     
     # internal speech 
     # draw internal speech icon
-    speech_modes(is_perception=False)
+    speech_modes("imagine")
     core.wait(inter_mode_wait)
     
     # speech 
     # draw speech icon
-    speech_modes(is_perception=False)
+    speech_modes("speak")
     core.wait(inter_mode_wait)
     
     # trial end wait 
@@ -134,6 +134,46 @@ def trial_run(df_row):
 def block_run(rows):
     for i, row in rows.iterrows():
         trial_run(row)
+        
+
+def guided_test_block(rows):
+    # Step 1: Explain the task
+    display_message("In each trial of the task, you will hear an audio of a sentence or word.")
+    display_message("Press 'Enter' to play a sentence.")
+    
+    # Play the first audio from the dataset as an example
+    speech_modes("perception", audio_path=rows.iloc[0]['audio_path'])
+    
+    # Step 2: Explain the following steps after the audio is played
+    display_message("Following the audio, you will have to repeat the sentence you have heard twice: once in your mind and once out loud.")
+    
+    display_message("First, you will have to repeat the sentence in your mind (icon above).", [imagine_icon])
+    
+    # Step 3: Explain mental speech
+    # You can display a mock icon here if needed, or just the fixation cross.
+    # display the icon
+    display_message("Then, you will have to say the sentence out loud (icon above).", [speak_icon])
+
+    
+    # Step 4: Explain the start of the trial
+    display_message("You should start when the fixation cross turns green and you hear the first beep. \n \n After you finish, press enter and you will see the fixation cross turn black, followed by a beep. ")
+    speech_modes("imagine")
+    core.wait(inter_mode_wait)
+    
+    # speech 
+    # draw speech icon
+    speech_modes("speak")
+    core.wait(inter_mode_wait)
+        
+    # Step 5: Practice the task with a couple of sentences
+    display_message("Now, let's practice with a couple of sentences.")
+    
+    for i, row in rows.iloc[:3].iterrows():  # Use the first two rows for practice
+        trial_run(row)
+    
+    # Step 6: Ask if they want to practice more
+    display_message("The practice is over!. Let's start the actual test. Press 'Enter' when you're ready.")
+    
     
 
 # recording 
@@ -211,6 +251,7 @@ display_message(instruction_messages['instruction_2'])
 #######################################
 sentences = pd.read_csv(sentence_file)
 
+guided_test_block(sentences.iloc[:10])
 block_run(sentences.iloc[:10])
 
 #######################################
