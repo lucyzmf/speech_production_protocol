@@ -10,7 +10,7 @@ save_path_events = root_path / "output_events"
 
 
 # exp parameters
-test_mode = False
+test_mode = True
 max_words_per_sent = 9
 
 full_screen = False
@@ -19,13 +19,14 @@ if test_mode:
     n_blocks = 1
     n_sent_trials_per_block = 2
     n_practice_trials = 1
-    n_word_repeats_per_block = 1
-    
+    n_word_repeats_per_subblock = 2
+    n_subblocks = 1
 else:
     n_blocks = 4
     n_sent_trials_per_block = 16
     n_practice_trials = 4
-    n_word_repeats_per_block = 4
+    n_word_repeats_per_subblock = 2
+    n_subblocks = 4
     
     
 
@@ -33,9 +34,7 @@ n_trial_runs = 4
 
 # block parameters
 n_beeps_on_block_start = 3
-
-n_word_trials_per_block = 40
-n_sent_breaks_per_block = 2
+ # one repeat of sent and words
 
 
 # trial parameters 

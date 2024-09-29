@@ -39,8 +39,8 @@ def display_message(text: str, other_icons=None):
     message.draw()
     
     # "Press Enter to continue" prompt at the bottom-right corner
-    prompt_text = "Press 'Enter' to continue"
-    prompt = visual.TextStim(WIN, text=prompt_text, color=text_color, pos=(0.95, -0.98), height=text_size * 0.7, anchorHoriz='right')
+    prompt_text = "Appuyez sur ENTRÉE pour continuer"
+    prompt = visual.TextStim(WIN, text=prompt_text, color=text_color, pos=(0.95, -0.95), height=text_size * 0.7, anchorHoriz='right')
     prompt.draw()
     
     if other_icons:
@@ -169,18 +169,20 @@ def block_run(sent_rows, word_rows, block_num):
     for i, row in sent_rows_.iterrows():
         trial_run(row)
         
-    # repeat words 
-    display_message_no_interaction("Words")
+        if i % n_subblocks == 0 and i != 0:
+            # repeat words 
+            display_message_no_interaction("Words")
 
-    word_rows_ = pd.concat([word_rows]*n_word_repeats_per_block, ignore_index=True)
-    word_rows_ = word_rows_.sample(frac=1)
-    word_rows_.reset_index(drop=True, inplace=True)
-    word_rows_['trial_num'] = np.arange(len(word_rows_))
-    word_rows_['block_num'] = block_num
-    
-    for i, row in word_rows_.iterrows():
-        trial_run(row)
-        
+            word_rows_ = pd.concat([word_rows]*n_word_repeats_per_subblock, ignore_index=True)
+            shuffle_idx = np.random.permutation(len(word_rows_))
+            word_rows_ = word_rows_.iloc[shuffle_idx]
+            word_rows_.reset_index(drop=True, inplace=True)
+            word_rows_['trial_num'] = np.arange(len(word_rows_))
+            word_rows_['block_num'] = block_num
+            
+            for i, row in word_rows_.iterrows():
+                trial_run(row)
+            
 
 def guided_test_block(rows):
     # Step 1: Explain the task
@@ -257,12 +259,16 @@ def record_audio():
 # welcome
 #######################################
 if __name__ == "__main__":
+    # Temporarily set the window to non-fullscreen mode to show the dialog
+    WIN.winHandle.set_fullscreen(False)
+    WIN.flip()
+
     # Create a dialog box to enter the date of the experiment
     dateDlg = gui.Dlg(title="Experiment Date")
     dateDlg.addField('Date:', tip='Enter the date (YYYY-MM-DD)')
     dateDlg.addField('Time:', tip='Enter the time')
 
-    dateInfo = dateDlg.show()  # show dialog and wait for OK or Cancel
+    dateInfo = dateDlg.show()  # Show dialog and wait for OK or Cancel
 
     if dateDlg.OK:  # if OK was pressed, proceed
         # experiment_date = dateInfo[0]
@@ -271,7 +277,10 @@ if __name__ == "__main__":
 
     else:
         core.quit()  # User pressed cancel, so exit
-        
+
+    # Restore the window to full screen mode after dialog interaction
+    WIN.winHandle.set_fullscreen(full_screen)
+    WIN.flip()
 
     # Ensure the recording stops properly when the script ends
 
@@ -306,7 +315,7 @@ if __name__ == "__main__":
         sentences = sentences.sample(4)
         words = words.sample(4)
 
-    guided_test_block(sentences.iloc[:10])
+    # guided_test_block(sentences.iloc[:10])
     for b in np.arange(n_blocks):
         block_run(sent_rows=sentences.iloc[b*n_sent_trials_per_block:(b+1)*n_sent_trials_per_block], word_rows=words, block_num=1)
 
