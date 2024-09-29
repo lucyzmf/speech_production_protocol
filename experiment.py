@@ -22,8 +22,8 @@ assert type(instruction_messages) == dict
 # global variables
 # Create a window
 WIN = visual.Window(fullscr=full_screen, color=screen_color, units="norm")
-CLOCK = core.Clock()
 FIXATION = visual.TextStim(WIN, text='+', color=(-1, -1, -1), font='Arial', height=fixation_size)
+EVENTS = []
 
 # load icons 
 imagine_icon = visual.ImageStim(WIN, image=(root_path / "icon" / "imagine.png"), size=(0.2, 0.2), pos=(0, 0.3))
@@ -50,6 +50,12 @@ def display_message(text: str, other_icons=None):
     WIN.flip()
     event.waitKeys(keyList=['return'])
 
+def display_message_no_interaction(text: str, wait_time=1):
+    message = visual.TextStim(WIN, text=text, color=text_color, wrapWidth=1.5, font='Arial', height=text_size)
+    message.draw()
+    WIN.flip()
+    core.wait(wait_time)
+
 def play_trigger(n_triggers: int, wait_time, core):
     for i in range(n_triggers):
         beep = sound.Sound(value='C', volume=1, sampleRate=44100, secs=0.2, stereo=True)
@@ -68,8 +74,11 @@ def mode_end_beep(sec=mode_end_beep_secs):
     core.wait(beep.getDuration() + mode_end_beep_wait)  # Wait for the sound duration and additional wait time
     
 
-def speech_modes(mode: str, audio_path=None):
-    # draw green fixation cross
+def speech_modes(mode: str, row: pd.Series):
+    global EVENTS
+    global CLOCK
+    
+    # draw fixation cross
     FIXATION.draw()
     WIN.flip()
     
@@ -80,7 +89,10 @@ def speech_modes(mode: str, audio_path=None):
     elif mode == 'speak':
         speak_icon.draw()
         
+    #log
+    start_time = CLOCK.getTime()
     mode_start_beep()
+    
     # draw green fixation 
     FIXATION.color = (0, 1, 0)
     FIXATION.draw()
@@ -88,7 +100,7 @@ def speech_modes(mode: str, audio_path=None):
     
     if mode == 'perception':
         # play audio 
-        audio = sound.Sound(audio_path[3:])
+        audio = sound.Sound(row["audio_path"][3:])
         audio.play()
         core.wait(audio.getDuration() + audio_end_wait)
     else: 
@@ -98,6 +110,8 @@ def speech_modes(mode: str, audio_path=None):
             if 'return' in keys:
                 break
     
+    # log 
+    stop_time = CLOCK.getTime()
     
     mode_end_beep()
     
@@ -108,31 +122,63 @@ def speech_modes(mode: str, audio_path=None):
     
     core.wait(mode_end_wait)
     
+    # log to EVENTS 
+    log = row.to_dict()
+    log['mode'] = mode
+    log['start_time'] = start_time
+    log['stop_time'] = stop_time
+    log['duration'] = stop_time - start_time
+    log['event_type'] = 'sentence' if 'sentence' in row.keys() else 'word'
+    
+    EVENTS.append(log)
+
+    
     
 def trial_run(df_row):
     # perception 
     # draw perception icon 
     
-    speech_modes("perception", audio_path=df_row['audio_path'])
+    speech_modes("perception", df_row)
     # intermode wait
     core.wait(inter_mode_wait)
     
     # internal speech 
     # draw internal speech icon
-    speech_modes("imagine")
+    speech_modes("imagine", df_row)
     core.wait(inter_mode_wait)
     
     # speech 
     # draw speech icon
-    speech_modes("speak")
+    speech_modes("speak", df_row)
     core.wait(inter_mode_wait)
     
     # trial end wait 
     core.wait(trial_end_wait)
 
 
-def block_run(rows):
-    for i, row in rows.iterrows():
+def block_run(sent_rows, word_rows, block_num):
+    # shuffle the rows
+    sent_rows_ = sent_rows.sample(frac=1)
+    sent_rows_.reset_index(drop=True, inplace=True)
+    sent_rows_['trial_num'] = np.arange(len(sent_rows_))
+    sent_rows_['block_num'] = block_num
+    
+    display_message_no_interaction(f"Block {block_num}")
+    display_message_no_interaction("Sentences")
+    
+    for i, row in sent_rows_.iterrows():
+        trial_run(row)
+        
+    # repeat words 
+    display_message_no_interaction("Words")
+
+    word_rows_ = pd.concat([word_rows]*n_word_repeats_per_block, ignore_index=True)
+    word_rows_ = word_rows_.sample(frac=1)
+    word_rows_.reset_index(drop=True, inplace=True)
+    word_rows_['trial_num'] = np.arange(len(word_rows_))
+    word_rows_['block_num'] = block_num
+    
+    for i, row in word_rows_.iterrows():
         trial_run(row)
         
 
@@ -142,7 +188,7 @@ def guided_test_block(rows):
     display_message("Press 'Enter' to play a sentence.")
     
     # Play the first audio from the dataset as an example
-    speech_modes("perception", audio_path=rows.iloc[0]['audio_path'])
+    speech_modes("perception", rows.iloc[0])
     
     # Step 2: Explain the following steps after the audio is played
     display_message("Following the audio, you will have to repeat the sentence you have heard twice: once in your mind and once out loud.")
@@ -157,18 +203,18 @@ def guided_test_block(rows):
     
     # Step 4: Explain the start of the trial
     display_message("You should start when the fixation cross turns green and you hear the first beep. \n \n After you finish, press enter and you will see the fixation cross turn black, followed by a beep. ")
-    speech_modes("imagine")
+    speech_modes("imagine", rows.iloc[0])
     core.wait(inter_mode_wait)
     
     # speech 
     # draw speech icon
-    speech_modes("speak")
+    speech_modes("speak", rows.iloc[0])
     core.wait(inter_mode_wait)
         
     # Step 5: Practice the task with a couple of sentences
     display_message("Now, let's practice with a couple of sentences.")
     
-    for i, row in rows.iloc[:3].iterrows():  # Use the first two rows for practice
+    for i, row in rows.iloc[:n_practice_trials].iterrows():  # Use the first two rows for practice
         trial_run(row)
     
     # Step 6: Ask if they want to practice more
@@ -210,65 +256,75 @@ def record_audio():
 #######################################
 # welcome
 #######################################
-# Create a dialog box to enter the date of the experiment
-dateDlg = gui.Dlg(title="Experiment Date")
-dateDlg.addField('Date:', tip='Enter the date (YYYY-MM-DD)')
-dateDlg.addField('Time:', tip='Enter the time')
+if __name__ == "__main__":
+    # Create a dialog box to enter the date of the experiment
+    dateDlg = gui.Dlg(title="Experiment Date")
+    dateDlg.addField('Date:', tip='Enter the date (YYYY-MM-DD)')
+    dateDlg.addField('Time:', tip='Enter the time')
 
-dateInfo = dateDlg.show()  # show dialog and wait for OK or Cancel
+    dateInfo = dateDlg.show()  # show dialog and wait for OK or Cancel
 
-if dateDlg.OK:  # if OK was pressed, proceed
-    # experiment_date = dateInfo[0]
-    experiment_date = dateInfo[list(dateInfo.keys())[0]]
-    exp_time = dateInfo[list(dateInfo.keys())[1]]
+    if dateDlg.OK:  # if OK was pressed, proceed
+        # experiment_date = dateInfo[0]
+        experiment_date = dateInfo[list(dateInfo.keys())[0]]
+        exp_time = dateInfo[list(dateInfo.keys())[1]]
 
-else:
-    core.quit()  # User pressed cancel, so exit
-    
-
-# Ensure the recording stops properly when the script ends
-
-# Function to save the recorded audio at the end of the experiment
-def save_audio_data(save_path, filename):
-    global global_audio_data
-    if len(global_audio_data) > 0:  # Check if there's data to save
-        print("Saving recorded audio...")
-        wav.write(str(save_path / filename), fs, global_audio_data.reshape(-1, 2))
-        print(f"Audio saved to {filename}")
     else:
-        print("No audio data to save.")
+        core.quit()  # User pressed cancel, so exit
+        
 
-# Register the cleanup function with atexit
-atexit.register(save_audio_data, save_path_recording, f'exp{experiment_date}-{exp_time}-audio.wav')
+    # Ensure the recording stops properly when the script ends
 
-# display welcome message and instructions 
-display_message(instruction_messages['landing_page'])
-display_message(instruction_messages['instruction_1'])
-display_message(instruction_messages['instruction_2'])
+    # Function to save the recorded audio at the end of the experiment
+    def save_audio_data(save_path, filename):
+        global global_audio_data
+        if len(global_audio_data) > 0:  # Check if there's data to save
+            print("Saving recorded audio...")
+            wav.write(str(save_path / filename), fs, global_audio_data.reshape(-1, 2))
+            print(f"Audio saved to {filename}")
+        else:
+            print("No audio data to save.")
 
-#######################################
-# start 
-#######################################
-sentences = pd.read_csv(sentence_file)
+    # Register the cleanup function with atexit
+    atexit.register(save_audio_data, save_path_recording, f'exp{experiment_date}-{exp_time}-audio.wav')
 
-guided_test_block(sentences.iloc[:10])
-block_run(sentences.iloc[:10])
+    # display welcome message and instructions 
+    display_message(instruction_messages['landing_page'])
+    display_message(instruction_messages['instruction_1'])
+    display_message(instruction_messages['instruction_2'])
 
-#######################################
-# end
-#######################################
-finish_statement = visual.TextStim(WIN, text=instruction_messages['finish_page'], color=text_color, font='Arial')
-finish_statement.draw()
-WIN.flip()
-core.wait(2)  # Adjust the wait time as needed
+    #######################################
+    # start 
+    #######################################
+    CLOCK = core.Clock()
 
-# Save the events to a CSV file
-# events = pd.concat(all_events)
-# events.to_csv(save_path / f'events-{experiment_date}-{exp_time}_all.csv', index=False)
+    sentences = pd.read_csv(sentence_file)
+    sentences = sentences.query("translanted_num_words < @max_words_per_sent")
+    words = pd.read_csv(word_file)
+    
+    if test_mode:
+        sentences = sentences.sample(4)
+        words = words.sample(4)
 
-# Close the window and quit the experiment
-WIN.close()
-core.quit()
+    guided_test_block(sentences.iloc[:10])
+    for b in np.arange(n_blocks):
+        block_run(sent_rows=sentences.iloc[b*n_sent_trials_per_block:(b+1)*n_sent_trials_per_block], word_rows=words, block_num=1)
+
+    #######################################
+    # end
+    #######################################
+    finish_statement = visual.TextStim(WIN, text=instruction_messages['finish_page'], color=text_color, font='Arial')
+    finish_statement.draw()
+    WIN.flip()
+    core.wait(2)  # Adjust the wait time as needed
+
+    # Save the events to a CSV file
+    events = pd.DataFrame(EVENTS)
+    events.to_csv(save_path_events / f'events-{experiment_date}-{exp_time}_all.csv', index=False)
+
+    # Close the window and quit the experiment
+    WIN.close()
+    core.quit()
 
 
 
