@@ -1,6 +1,14 @@
 from pathlib import Path
+import getpass
 
-root_path = Path('/Users/lucy/Documents/PhD stuff/research/speech_production_protocol')
+user = getpass.getuser()
+
+match user:
+    case "lucyzhang":
+        root_path = Path('/Users/lucyzhang/Desktop/PhD stuff/research/speech_production_protocol')
+        
+    case "lucy": 
+        root_path = Path('/Users/lucy/Documents/PhD stuff/research/speech_production_protocol')
 
 # paths 
 sentence_file = root_path / "text" / "selected_with_translation_audiopath.csv"
@@ -14,6 +22,8 @@ test_mode = True
 max_words_per_sent = 9
 
 full_screen = False
+
+mic_device_name = "MacBook Pro Microphone" # "External Microphone"
 
 if test_mode:
     n_blocks = 1
