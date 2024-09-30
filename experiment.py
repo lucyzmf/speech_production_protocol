@@ -229,6 +229,8 @@ def guided_test_block(rows):
 # Audio recording setup
 fs = 44100  # Sample rate
 global_audio_data = np.array([], dtype='float32')  # Use a numpy array for efficiency
+mic_audio_data = np.array([], dtype='float32')  # Use a numpy array for efficiency
+
 
 def find_device_index_by_name(search_name):
     devices = sd.query_devices()
@@ -240,18 +242,38 @@ def find_device_index_by_name(search_name):
 # Example usage
 search_name = "BlackHole"  # Replace with the part of the name you're searching for
 loopback_device_index = find_device_index_by_name(search_name)
+mic_device_index = find_device_index_by_name(mic_device_name)
 
-def record_audio():
+def callback_system(indata_system, framse, time, status):
+    global global_audio_data
+    
+    if status:
+        print(status)
+    
+    #combine audio streams 
+    global_audio_data = np.append(global_audio_data, indata_system.flatten())
+
+def callback_mic(indata_system, framse, time, status):
+    global mic_audio_data
+    
+    if status:
+        print(status)
+    
+    #combine audio streams 
+    mic_audio_data = np.append(mic_audio_data, indata_system.flatten())
+
+def record_audio_combined():
     """Continuously record audio until the script ends."""
     global global_audio_data
-    def callback(indata, frames, time, status):
-        """This function is called for each audio block."""
-        global global_audio_data
-        global_audio_data = np.append(global_audio_data, indata.copy().flatten())  # Flatten and append data
-
+    
     # Open the stream and start recording
-    with sd.InputStream(samplerate=fs, channels=2, dtype='float32', device=loopback_device_index, callback=callback):
+    with sd.InputStream(samplerate=fs, channels=2, dtype='float32', device=loopback_device_index, callback=callback_system) as system_stream, \
+         sd.InputStream(samplerate=fs, channels=1, dtype='float32', device=mic_device_index, callback=callback_mic) as mic_stream:
         print("Recording started...")
+        
+        system_stream.start()
+        mic_stream.start()
+        
         sd.sleep(10000000)  # Keep recording for a long time (until the script ends)
         
 
@@ -285,22 +307,34 @@ if __name__ == "__main__":
     # Ensure the recording stops properly when the script ends
 
     # Function to save the recorded audio at the end of the experiment
-    def save_audio_data(save_path, filename):
+    def save_audio_data(save_path, filename, is_mic):
         global global_audio_data
-        if len(global_audio_data) > 0:  # Check if there's data to save
+        global mic_audio_data
+        
+        audio_data = mic_audio_data if is_mic else global_audio_data
+        if len(audio_data) > 0:  # Check if there's data to save
             print("Saving recorded audio...")
-            wav.write(str(save_path / filename), fs, global_audio_data.reshape(-1, 2))
+            if is_mic:  # no need to reshape mic data 
+                wav.write(str(save_path / filename), fs, audio_data)
+            else:
+                wav.write(str(save_path / filename), fs, audio_data.reshape(-1, 2))
             print(f"Audio saved to {filename}")
         else:
             print("No audio data to save.")
 
     # Register the cleanup function with atexit
-    atexit.register(save_audio_data, save_path_recording, f'exp{experiment_date}-{exp_time}-audio.wav')
+    atexit.register(save_audio_data, save_path_recording, f'exp{experiment_date}-{exp_time}-audio_out.wav', is_mic=False)
+    atexit.register(save_audio_data, save_path_recording, f'exp{experiment_date}-{exp_time}-mic_in.wav', is_mic=True)
+    
 
     # display welcome message and instructions 
     display_message(instruction_messages['landing_page'])
     display_message(instruction_messages['instruction_1'])
     display_message(instruction_messages['instruction_2'])
+    
+    # start audio thread
+    audio_thread = Thread(target=record_audio_combined, daemon=True)
+    audio_thread.start()
 
     #######################################
     # start 
