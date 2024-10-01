@@ -26,7 +26,7 @@ FIXATION = visual.TextStim(WIN, text='+', color=(-1, -1, -1), font='Arial', heig
 EVENTS = []
 
 # load icons 
-imagine_icon = visual.ImageStim(WIN, image=(root_path / "icon" / "imagine.png"), size=(0.2, 0.2), pos=(0, 0.3))
+# imagine_icon = visual.ImageStim(WIN, image=(root_path / "icon" / "imagine.png"), size=(0.2, 0.2), pos=(0, 0.3))
 speak_icon = visual.ImageStim(WIN, image=(root_path / "icon" / "speak.png"), size=(0.2, 0.2), pos=(0, 0.3))
 listen_icon = visual.ImageStim(WIN, image=(root_path / "icon" / "audio.png"), size=(0.2, 0.2), pos=(0, 0.3))
 
@@ -84,8 +84,8 @@ def speech_modes(mode: str, row: pd.Series):
     
     if mode == 'perception':
         listen_icon.draw()
-    elif mode == 'imagine':
-        imagine_icon.draw()
+    # elif mode == 'imagine':
+    #     imagine_icon.draw()
     elif mode == 'speak':
         speak_icon.draw()
         
@@ -144,8 +144,8 @@ def trial_run(df_row):
     
     # internal speech 
     # draw internal speech icon
-    speech_modes("imagine", df_row)
-    core.wait(inter_mode_wait)
+    # speech_modes("imagine", df_row)
+    # core.wait(inter_mode_wait)
     
     # speech 
     # draw speech icon
@@ -160,28 +160,25 @@ def block_run(sent_rows, word_rows, block_num):
     # shuffle the rows
     sent_rows_ = sent_rows.sample(frac=1)
     sent_rows_.reset_index(drop=True, inplace=True)
-    sent_rows_['trial_num'] = np.arange(len(sent_rows_))
     sent_rows_['block_num'] = block_num
     
-    display_message_no_interaction(f"Block {block_num}")
-    display_message_no_interaction("Sentences")
+    word_rows_ = pd.concat([word_rows]*n_word_repeats_per_block, ignore_index=True)
+    word_rows_.reset_index(drop=True, inplace=True)
+    word_rows_['block_num'] = block_num
     
-    for i, row in sent_rows_.iterrows():
+    all_rows = pd.concat([sent_rows_, word_rows_], ignore_index=True)
+    all_rows['trial_num'] = np.arange(len(all_rows))
+
+    display_message_no_interaction(f"Block {block_num}")
+    
+    trials_per_subblock = len(all_rows) // n_subblocks
+    
+    for i, row in all_rows.iterrows():
         trial_run(row)
         
-        if i % n_subblocks == 0 and i != 0:
+        if i % trials_per_subblock == 0 and i != 0:
             # repeat words 
-            display_message_no_interaction("Words")
-
-            word_rows_ = pd.concat([word_rows]*n_word_repeats_per_subblock, ignore_index=True)
-            shuffle_idx = np.random.permutation(len(word_rows_))
-            word_rows_ = word_rows_.iloc[shuffle_idx]
-            word_rows_.reset_index(drop=True, inplace=True)
-            word_rows_['trial_num'] = np.arange(len(word_rows_))
-            word_rows_['block_num'] = block_num
-            
-            for i, row in word_rows_.iterrows():
-                trial_run(row)
+            display_message_no_interaction("break 5 sec", wait_time=5)
             
 
 def guided_test_block(rows):
@@ -193,9 +190,9 @@ def guided_test_block(rows):
     speech_modes("perception", rows.iloc[0])
     
     # Step 2: Explain the following steps after the audio is played
-    display_message("Following the audio, you will have to repeat the sentence you have heard twice: once in your mind and once out loud.")
+    display_message("Following the audio, you will have to repeat the sentence you have heard out loud.")
     
-    display_message("First, you will have to repeat the sentence in your mind (icon above).", [imagine_icon])
+    # display_message("First, you will have to repeat the sentence in your mind (icon above).", [imagine_icon])
     
     # Step 3: Explain mental speech
     # You can display a mock icon here if needed, or just the fixation cross.
@@ -205,8 +202,8 @@ def guided_test_block(rows):
     
     # Step 4: Explain the start of the trial
     display_message("You should start when the fixation cross turns green and you hear the first beep. \n \n After you finish, press enter and you will see the fixation cross turn black, followed by a beep. ")
-    speech_modes("imagine", rows.iloc[0])
-    core.wait(inter_mode_wait)
+    # speech_modes("imagine", rows.iloc[0])
+    # core.wait(inter_mode_wait)
     
     # speech 
     # draw speech icon
@@ -342,7 +339,7 @@ if __name__ == "__main__":
     CLOCK = core.Clock()
 
     sentences = pd.read_csv(sentence_file)
-    sentences = sentences.query("translanted_num_words < @max_words_per_sent")
+    # sentences = sentences.query("translanted_num_words < @max_words_per_sent")
     words = pd.read_csv(word_file)
     
     if test_mode:
@@ -350,8 +347,11 @@ if __name__ == "__main__":
         words = words.sample(4)
 
     # guided_test_block(sentences.iloc[:10])
-    for b in np.arange(n_blocks):
-        block_run(sent_rows=sentences.iloc[b*n_sent_trials_per_block:(b+1)*n_sent_trials_per_block], word_rows=words, block_num=1)
+    block_idx = np.linspace(0, len(sentences), n_blocks+1).astype(int)
+    for b in range(n_blocks):
+        print(f"Block {b+1}")
+        print(f"sentences {block_idx[b]}:{block_idx[b+1]}")
+        block_run(sent_rows=sentences.iloc[block_idx[b]:block_idx[b+1]], word_rows=words, block_num=1)
 
     #######################################
     # end

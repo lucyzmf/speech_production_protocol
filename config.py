@@ -3,15 +3,13 @@ import getpass
 
 user = getpass.getuser()
 
-match user:
-    case "lucyzhang":
-        root_path = Path('/Users/lucyzhang/Desktop/PhD stuff/research/speech_production_protocol')
-        
-    case "lucy": 
-        root_path = Path('/Users/lucy/Documents/PhD stuff/research/speech_production_protocol')
+if user == "lucyzhang":
+    root_path = Path('/Users/lucyzhang/Desktop/PhD stuff/research/speech_production_protocol')
+elif user == "lucy":
+    root_path = Path('/Users/lucy/Documents/PhD stuff/research/speech_production_protocol')
 
 # paths 
-sentence_file = root_path / "text" / "selected_with_translation_audiopath.csv"
+sentence_file = root_path / "text" / "selection_min_rep3.csv"
 word_file = root_path / "text" / "selected_words_final_audiopath.csv"
 save_path_recording = root_path / "recordings"
 save_path_events = root_path / "output_events"
@@ -27,15 +25,13 @@ mic_device_name = "MacBook Pro Microphone" # "External Microphone"
 
 if test_mode:
     n_blocks = 1
-    n_sent_trials_per_block = 2
     n_practice_trials = 1
-    n_word_repeats_per_subblock = 2
-    n_subblocks = 1
+    n_word_repeats_per_block = 2
+    n_subblocks = 2
 else:
     n_blocks = 4
-    n_sent_trials_per_block = 16
     n_practice_trials = 4
-    n_word_repeats_per_subblock = 2
+    n_word_repeats_per_block = 2
     n_subblocks = 4
     
     
