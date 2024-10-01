@@ -184,44 +184,34 @@ def block_run(sent_rows, word_rows, block_num):
             
 
 def guided_test_block(rows):
-    # Step 1: Explain the task
-    display_message("In each trial of the task, you will hear an audio of a sentence or word.")
-    display_message("Press 'Enter' to play a sentence.")
+    # Étape 1 : Expliquer la tâche
+    display_message("Dans chaque essai de la tâche, vous entendrez un enregistrement audio d'une phrase ou d'un mot. Appuyez sur 'Entrée' pour jouer une phrase.")
     
-    # Play the first audio from the dataset as an example
+    # Jouer le premier audio du dataset comme exemple
     speech_modes("perception", rows.iloc[0])
     
-    # Step 2: Explain the following steps after the audio is played
-    display_message("Following the audio, you will have to repeat the sentence or word you have heard out loud.")
+    # Étape 2 : Expliquer les étapes suivantes après que l'audio ait été joué
+    display_message("Après l'audio, vous devrez répéter à voix haute la phrase ou le mot que vous avez entendu (icône ci-dessus).", [speak_icon])
     
-    # display_message("First, you will have to repeat the sentence in your mind (icon above).", [imagine_icon])
-    
-    # Step 3: Explain mental speech
-    # You can display a mock icon here if needed, or just the fixation cross.
-    # display the icon
-    display_message("Then, you will have to say the sentence out loud (icon above).", [speak_icon])
-
-    
-    # Step 4: Explain the start of the trial
-    display_message("You should start when the fixation cross turns green and you hear the first beep. \n \n After you finish, press enter and you will see the fixation cross turn black, followed by a beep. ")
+    # Étape 4 : Expliquer le début de l'essai
+    display_message("Vous devez commencer lorsque la croix de fixation devient verte et que vous entendez le premier bip. \n \n Après avoir terminé, appuyez sur Entrée et vous verrez la croix de fixation devenir noire, suivie d'un bip.")
     # speech_modes("imagine", rows.iloc[0])
     # core.wait(inter_mode_wait)
     
-    # speech 
-    # draw speech icon
+    # Parler
+    # Dessiner l'icône de la parole
     speech_modes("speak", rows.iloc[0])
     core.wait(inter_mode_wait)
         
-    # Step 5: Practice the task with a couple of sentences
-    display_message("Now, let's practice with a couple of sentences.")
+    # Étape 5 : S'exercer à la tâche avec quelques phrases
+    display_message("Maintenant, pratiquons avec quelques phrases.")
     
-    for i, row in rows.iloc[:n_practice_trials].iterrows():  # Use the first two rows for practice
+    for i, row in rows.iloc[:n_practice_trials].iterrows():  # Utiliser les deux premières lignes pour l'exercice
         trial_run(row)
     
-    # Step 6: Ask if they want to practice more
-    display_message("The practice is over!. Let's start the actual test. Press 'Enter' when you're ready.")
-    
-    
+    # Étape 6 : Demander s'ils veulent s'exercer davantage
+    display_message("L'exercice est terminé ! Commençons le test réel. Appuyez sur 'Entrée' lorsque vous êtes prêt.")
+
 
 # recording 
 # Global variable to hold the recorded audio
