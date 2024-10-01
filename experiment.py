@@ -167,6 +167,8 @@ def block_run(sent_rows, word_rows, block_num):
     word_rows_['block_num'] = block_num
     
     all_rows = pd.concat([sent_rows_, word_rows_], ignore_index=True)
+    shuffle_idx = np.random.permutation(len(all_rows))
+    all_rows = all_rows.iloc[shuffle_idx]
     all_rows['trial_num'] = np.arange(len(all_rows))
 
     display_message_no_interaction(f"Block {block_num}")
@@ -190,7 +192,7 @@ def guided_test_block(rows):
     speech_modes("perception", rows.iloc[0])
     
     # Step 2: Explain the following steps after the audio is played
-    display_message("Following the audio, you will have to repeat the sentence you have heard out loud.")
+    display_message("Following the audio, you will have to repeat the sentence or word you have heard out loud.")
     
     # display_message("First, you will have to repeat the sentence in your mind (icon above).", [imagine_icon])
     
@@ -346,7 +348,7 @@ if __name__ == "__main__":
         sentences = sentences.sample(4)
         words = words.sample(4)
 
-    # guided_test_block(sentences.iloc[:10])
+    guided_test_block(sentences.iloc[:n_practice_trials])
     block_idx = np.linspace(0, len(sentences), n_blocks+1).astype(int)
     for b in range(n_blocks):
         print(f"Block {b+1}")
