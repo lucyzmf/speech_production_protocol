@@ -1,0 +1,40 @@
+landing_page: >
+  Bienvenue et merci de participer à notre étude !
+
+
+  Cette expérience explore comment vous traitez les phrase et les mots, en les répétant à haute voix. Nous sommes ravis de vous avoir parmi nous !
+
+
+  Appuyez sur ENTRÉE pour continuer.
+
+instruction_1: >
+  La tâche comporte deux étapes dans chaque essai :
+
+
+  1. Perception : Vous entendrez une phrase ou un mot. Concentrez-vous bien pour mémoriser ce que vous entendez.
+
+
+  2. Discours à voix haute : Ensuite, répétez la phrase ou le mot à haute voix, également signalé par la croix verte.
+
+
+instruction_2: >
+  Points clés à retenir :
+
+
+  1. Vous verrez des icônes pour vous guider. L’icône "écoute" s’affiche pour l’étape d'écoute, et l’icône "parole" pour la répétition à voix haute.
+
+
+  2. La croix de fixation devient verte pour signaler que vous devez commencer.
+
+
+  3. Appuyez sur ENTRÉE après chaque phase pour passer à l'étape suivante.
+
+
+trial_session_start: >
+  Un essai va maintenant commencer pour vous familiariser avec la procédure, comportant quelque phrases.
+
+
+finish_page: >
+  L'expérience est terminée.
+
+  Merci de votre participation à cette étude !
