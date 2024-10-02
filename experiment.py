@@ -218,7 +218,7 @@ def guided_test_block(rows):
 # recording 
 # Global variable to hold the recorded audio
 # Audio recording setup
-fs = 44100  # Sample rate
+fs = 48000  # Sample rate
 global_audio_data = np.array([], dtype='float32')  # Use a numpy array for efficiency
 mic_audio_data = np.array([], dtype='float32')  # Use a numpy array for efficiency
 
@@ -231,18 +231,7 @@ def find_device_index_by_name(search_name):
     return None
 
 # Example usage
-search_name = "BlackHole"  # Replace with the part of the name you're searching for
-loopback_device_index = find_device_index_by_name(search_name)
 mic_device_index = find_device_index_by_name(mic_device_name)
-
-def callback_system(indata_system, framse, time, status):
-    global global_audio_data
-    
-    if status:
-        print(status)
-    
-    #combine audio streams 
-    global_audio_data = np.append(global_audio_data, indata_system.flatten())
 
 def callback_mic(indata_system, framse, time, status):
     global mic_audio_data
@@ -258,10 +247,7 @@ def record_audio_combined():
     global global_audio_data
     
     # Open the stream and start recording
-    # with sd.InputStream(samplerate=fs, channels=2, dtype='float32', device=loopback_device_index, callback=callback_system) as system_stream, \
-    #      sd.InputStream(samplerate=fs, channels=1, dtype='float32', device=mic_device_index, callback=callback_mic) as mic_stream:
-             
-    with sd.InputStream(samplerate=fs, channels=1, dtype='float32', device=mic_device_index, callback=callback_mic) as mic_stream:
+    with sd.InputStream(samplerate=fs, channels=1, dtype='float32', device=mic_device_index, callback=callback_mic, blocksize=1024) as mic_stream:
         print("Recording started...")
         
         # system_stream.start()
@@ -370,12 +356,13 @@ if __name__ == "__main__":
         block_run(sent_rows=sentences.iloc[block_idx[b]:block_idx[b+1]], word_rows=words.iloc[block_idx_w[b]:block_idx_w[b+1]], block_num=b+1)
         
         # save audio data 
-        save_block_audio_data(save_path_recording, b+1, experiment_date, exp_time, is_mic=False)
+        save_block_audio_data(save_path_recording, b+1, experiment_date, exp_time, is_mic=True)
         
         events = pd.DataFrame(EVENTS)
         events.to_csv(save_path_events / f'events-{experiment_date}-{exp_time}_block{b+1}.csv', index=False)
 
-        check_exit_or_continue()
+        if b != n_blocks - 1:
+            check_exit_or_continue()
 
     #######################################
     # end

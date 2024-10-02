@@ -1,3 +1,6 @@
 import sounddevice as sd
 
-print(sd.query_devices())
+devices = sd.query_devices()
+
+for idx, device in enumerate(devices):
+    print(f"{idx}: {device['name']}, default sample rate: {device['default_samplerate']}")
