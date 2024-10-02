@@ -357,8 +357,8 @@ if __name__ == "__main__":
     words = pd.read_csv(word_file)
     
     if test_mode:
-        sentences = sentences.sample(20)
-        words = words.sample(20)
+        sentences = sentences.sample(4)
+        words = words.sample(4)
 
     guided_test_block(sentences.iloc[:n_practice_trials])
     block_idx = np.linspace(0, len(sentences), n_blocks+1).astype(int)
@@ -371,6 +371,9 @@ if __name__ == "__main__":
         
         # save audio data 
         save_block_audio_data(save_path_recording, b+1, experiment_date, exp_time, is_mic=False)
+        
+        events = pd.DataFrame(EVENTS)
+        events.to_csv(save_path_events / f'events-{experiment_date}-{exp_time}_block{b+1}.csv', index=False)
 
         check_exit_or_continue()
 

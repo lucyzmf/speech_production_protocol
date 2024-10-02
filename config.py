@@ -16,7 +16,7 @@ save_path_events = root_path / "output_events"
 
 
 # exp parameters
-test_mode = False
+test_mode = True
 # max_words_per_sent = 9
 
 full_screen = False
