@@ -258,11 +258,13 @@ def record_audio_combined():
     global global_audio_data
     
     # Open the stream and start recording
-    with sd.InputStream(samplerate=fs, channels=2, dtype='float32', device=loopback_device_index, callback=callback_system) as system_stream, \
-         sd.InputStream(samplerate=fs, channels=1, dtype='float32', device=mic_device_index, callback=callback_mic) as mic_stream:
+    # with sd.InputStream(samplerate=fs, channels=2, dtype='float32', device=loopback_device_index, callback=callback_system) as system_stream, \
+    #      sd.InputStream(samplerate=fs, channels=1, dtype='float32', device=mic_device_index, callback=callback_mic) as mic_stream:
+             
+    with sd.InputStream(samplerate=fs, channels=1, dtype='float32', device=mic_device_index, callback=callback_mic) as mic_stream:
         print("Recording started...")
         
-        system_stream.start()
+        # system_stream.start()
         mic_stream.start()
         
         sd.sleep(10000000)  # Keep recording for a long time (until the script ends)
@@ -368,62 +370,4 @@ if __name__ == "__main__":
     WIN.close()
     core.quit()
 
-
-
-#######################################
-# trial start
-#######################################
-# display_message(instruction_messages['trial_session_start'])
-
-# core.wait(1)
-
-# # Start recording in a separate thread to not block the main PsychoPy experiment
-# audio_thread = Thread(target=record_audio, daemon=True)
-# audio_thread.start()
-
-# # Reset the clock to zero at the beginning of the presentation
-# clock.reset()
-# all_events = []  # List to hold event data
-
-# events_trial = iter_sentences(trial_sentences, win, clock, 'trial', core)
-
-# all_events.extend(events_trial)
-# #######################################
-# # actual test
-# #######################################
-# display_message(instruction_messages['trial_session_end'])
-
-# for b in np.arange(1, n_blocks+1):
-    
-#     # show block number
-#     block_no = visual.TextStim(win, text=f'Bloc {b}', color=(-1, -1, -1), font='Arial')
-#     block_no.draw()
-#     win.flip()
-    
-#     core.wait(1)
-    
-#     # get sentences assigned to this block 
-#     sentence_block = sentences[block_idx == b]
-
-#     events_test = iter_sentences(sentence_block, win, clock, f'block{b}', core)
-
-#     all_events.extend(events_test)
-    
-#     # backup save 
-#     pd.concat(all_events).to_csv(save_path / f'events-{experiment_date}-{exp_time}block{b}.csv', index=False)
-    
-#     # check if continue withe the exp
-#     between_block = f"Vous avez terminé le bloc{b} ! \n \n Si vous souhaitez continuer, appuyez sur ENTRÉE pour démarrer le bloc suivant. Si vous souhaitez arrêter, appuyez sur n'importe quelle touche pour quitter l'étude."
-#     message = visual.TextStim(win, text=between_block, color=(-1, -1, -1), wrapWidth=1.5, font='Arial')
-#     message.draw()
-#     win.flip()
-    
-#     key = event.waitKeys()
-#     print(key)
-    
-#     if key[0] == '\r':
-#         continue 
-#     else: 
-#         break 
-    
 
