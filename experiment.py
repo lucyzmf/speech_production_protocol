@@ -300,25 +300,43 @@ if __name__ == "__main__":
     # Ensure the recording stops properly when the script ends
 
     # Function to save the recorded audio at the end of the experiment
-    def save_audio_data(save_path, filename, is_mic):
+    def save_block_audio_data(save_path, block_num, experiment_date, exp_time, is_mic=False):
         global global_audio_data
         global mic_audio_data
         
         audio_data = mic_audio_data if is_mic else global_audio_data
-        if len(audio_data) > 0:  # Check if there's data to save
-            print("Saving recorded audio...")
-            if is_mic:  # no need to reshape mic data 
+        if len(audio_data) > 0:
+            print(f"Saving recorded audio for block {block_num}...")
+            filename = f'exp{experiment_date}-{exp_time}-block{block_num}-mic_in.wav' if is_mic else f'exp{experiment_date}-{exp_time}-block{block_num}-audio_out.wav'
+            if is_mic:
                 wav.write(str(save_path / filename), fs, audio_data)
             else:
                 wav.write(str(save_path / filename), fs, audio_data.reshape(-1, 2))
-            print(f"Audio saved to {filename}")
+            print(f"Audio for block {block_num} saved to {filename}")
         else:
-            print("No audio data to save.")
+            print(f"No audio data to save for block {block_num}.")
+        
+        # Reset audio data for the next block
+        if is_mic:
+            mic_audio_data = np.array([], dtype='float32')
+        else:
+            global_audio_data = np.array([], dtype='float32')
+            
+            
+    def check_exit_or_continue():
+        between_block = "Vous avez terminé le bloc. N'hésitez pas à vous reposer un peu. Lorsque vous êtes prêt, appuyez sur ENTRÉE pour passer au bloc suivant."
+        message = visual.TextStim(WIN, text=between_block, color=text_color, wrapWidth=1.5, font='Arial')
+        message.draw()
+        WIN.flip()
 
-    # Register the cleanup function with atexit
-    atexit.register(save_audio_data, save_path_recording, f'exp{experiment_date}-{exp_time}-audio_out.wav', is_mic=False)
-    atexit.register(save_audio_data, save_path_recording, f'exp{experiment_date}-{exp_time}-mic_in.wav', is_mic=True)
-    
+        keys = event.waitKeys(keyList=['return', 'escape'])
+        if 'escape' in keys:
+            # Save all data before exiting
+            events = pd.DataFrame(EVENTS)
+            events.to_csv(save_path_events / f'events-{experiment_date}-{exp_time}_all.csv', index=False)
+            WIN.close()
+            core.quit()
+
 
     # display welcome message and instructions 
     display_message(instruction_messages['landing_page'])
@@ -351,8 +369,10 @@ if __name__ == "__main__":
         print(f"words {block_idx_w[b]}:{block_idx_w[b+1]}")
         block_run(sent_rows=sentences.iloc[block_idx[b]:block_idx[b+1]], word_rows=words.iloc[block_idx_w[b]:block_idx_w[b+1]], block_num=b+1)
         
-        if b!= n_blocks-1:
-            display_message("Vous avez terminé le bloc. N'hésitez pas à vous reposer un peu. Lorsque vous êtes prêt, appuyez sur ENTRÉE pour passer au bloc suivant.")
+        # save audio data 
+        save_block_audio_data(save_path_recording, b+1, experiment_date, exp_time, is_mic=False)
+
+        check_exit_or_continue()
 
     #######################################
     # end

@@ -24,9 +24,9 @@ full_screen = False
 mic_device_name = "MacBook Pro Microphone" # "External Microphone"
 
 if test_mode:
-    n_blocks = 1
+    n_blocks = 2
     n_practice_trials = 1
-    n_word_repeats_per_block = 2
+    n_word_repeats_per_block = 1
     n_subblocks = 2
 else:
     n_blocks = 5
