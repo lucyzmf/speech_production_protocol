@@ -170,17 +170,19 @@ def block_run(sent_rows, word_rows, block_num):
     shuffle_idx = np.random.permutation(len(all_rows))
     all_rows = all_rows.iloc[shuffle_idx]
     all_rows['trial_num'] = np.arange(len(all_rows))
+    all_rows.reset_index(drop=True, inplace=True)
 
     display_message_no_interaction(f"Block {block_num}")
     
     trials_per_subblock = len(all_rows) // n_subblocks
+    print(f"Trials per subblock: {trials_per_subblock}")
     
     for i, row in all_rows.iterrows():
         trial_run(row)
         
         if i % trials_per_subblock == 0 and i != 0:
             # repeat words 
-            display_message_no_interaction("break 5 sec", wait_time=5)
+            display_message_no_interaction("petite pause 10sec", wait_time=10)
             
 
 def guided_test_block(rows):
@@ -335,15 +337,20 @@ if __name__ == "__main__":
     words = pd.read_csv(word_file)
     
     if test_mode:
-        sentences = sentences.sample(4)
-        words = words.sample(4)
+        sentences = sentences.sample(20)
+        words = words.sample(20)
 
     guided_test_block(sentences.iloc[:n_practice_trials])
     block_idx = np.linspace(0, len(sentences), n_blocks+1).astype(int)
+    block_idx_w = np.linspace(0, len(words), n_blocks+1).astype(int)
     for b in range(n_blocks):
         print(f"Block {b+1}")
         print(f"sentences {block_idx[b]}:{block_idx[b+1]}")
-        block_run(sent_rows=sentences.iloc[block_idx[b]:block_idx[b+1]], word_rows=words, block_num=1)
+        print(f"words {block_idx_w[b]}:{block_idx_w[b+1]}")
+        block_run(sent_rows=sentences.iloc[block_idx[b]:block_idx[b+1]], word_rows=words.iloc[block_idx_w[b]:block_idx_w[b+1]], block_num=b+1)
+        
+        if b!= n_blocks-1:
+            display_message("Vous avez terminé le bloc. N'hésitez pas à vous reposer un peu. Lorsque vous êtes prêt, appuyez sur ENTRÉE pour passer au bloc suivant.")
 
     #######################################
     # end

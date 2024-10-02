@@ -16,8 +16,8 @@ save_path_events = root_path / "output_events"
 
 
 # exp parameters
-test_mode = True
-max_words_per_sent = 9
+test_mode = False
+# max_words_per_sent = 9
 
 full_screen = False
 
@@ -29,8 +29,8 @@ if test_mode:
     n_word_repeats_per_block = 2
     n_subblocks = 2
 else:
-    n_blocks = 4
-    n_practice_trials = 4
+    n_blocks = 5
+    n_practice_trials = 3
     n_word_repeats_per_block = 2
     n_subblocks = 4
     
