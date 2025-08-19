@@ -330,8 +330,8 @@ if __name__ == "__main__":
     display_message(instruction_messages['instruction_2'])
     
     # start audio thread
-    audio_thread = Thread(target=record_audio_combined, daemon=True)
-    audio_thread.start()
+    # audio_thread = Thread(target=record_audio_combined, daemon=True)
+    # audio_thread.start()
 
     #######################################
     # start 
@@ -350,13 +350,15 @@ if __name__ == "__main__":
     block_idx = np.linspace(0, len(sentences), n_blocks+1).astype(int)
     block_idx_w = np.linspace(0, len(words), n_blocks+1).astype(int)
     for b in range(n_blocks):
+        if b < start_block:
+            continue
         print(f"Block {b+1}")
         print(f"sentences {block_idx[b]}:{block_idx[b+1]}")
         print(f"words {block_idx_w[b]}:{block_idx_w[b+1]}")
         block_run(sent_rows=sentences.iloc[block_idx[b]:block_idx[b+1]], word_rows=words.iloc[block_idx_w[b]:block_idx_w[b+1]], block_num=b+1)
         
         # save audio data 
-        save_block_audio_data(save_path_recording, b+1, experiment_date, exp_time, is_mic=True)
+        # save_block_audio_data(save_path_recording, b+1, experiment_date, exp_time, is_mic=True)
         
         events = pd.DataFrame(EVENTS)
         events.to_csv(save_path_events / f'events-{experiment_date}-{exp_time}_block{b+1}.csv', index=False)

@@ -16,15 +16,16 @@ save_path_events = root_path / "output_events"
 
 
 # exp parameters
-test_mode = True
+test_mode = False
+start_block = 0
 # max_words_per_sent = 9
 
-full_screen = False
+full_screen = True
 
 mic_device_name = "MacBook Pro Microphone" # "External Microphone"
 
 if test_mode:
-    n_blocks = 2
+    n_blocks = 3
     n_practice_trials = 1
     n_word_repeats_per_block = 1
     n_subblocks = 2
